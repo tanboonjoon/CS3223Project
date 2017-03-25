@@ -96,6 +96,12 @@ public class Join extends Operator{
 	return jn;
 
     }
+    
+    @Override
+    public boolean equals(Object obj) {
+		return false;
+    	
+    }
 
 }
 

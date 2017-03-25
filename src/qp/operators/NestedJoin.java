@@ -122,11 +122,13 @@ public class NestedJoin extends Join{
 
 
 	while(!outbatch.isFull()){
-
+		System.out.println("Before if");
 	    if(lcurs==0 && eosr==true){
 		/** new left page is to be fetched**/
+	    	System.out.println("fethcing batch");
 		leftbatch =(Batch) left.next();
 		if(leftbatch==null){
+			System.out.println("null");
 		    eosl=true;
 		    return outbatch;
 		}

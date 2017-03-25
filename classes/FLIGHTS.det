@@ -1,0 +1,7 @@
+4
+100
+flno INTEGER 200000 PK 4
+from STRING 44 NK 88
+distance INTEGER 1000 NK 4
+departs TIME 2359 NK 3
+arrives TIME 2359 NK 3
