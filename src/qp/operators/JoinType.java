@@ -20,7 +20,7 @@ public class JoinType{
 
    public static int numJoinTypes(){
 	
-	return NESTEDJOIN;
+	return BLOCKNESTED;
 
         // return k for k joins
     }

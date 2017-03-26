@@ -1,0 +1,39 @@
+Statistic used for report writing
+
+Schema size: {
+	AIRCRAFTS : 200000
+	CERTIFIED : 200000
+	EMPLOYEES : 100000
+	FLIGHTS : 160000
+	SCHEDULE : 100000
+}
+
+Experiment 1 : {
+	Employees and Certified(via eid) {
+		Bytes per page : 500
+		No of buffer   : 10000
+
+		Block Nested Loop : 78.973s
+		Index Nested Loop :
+	}
+
+	Flights and Schedule(via flno) {
+		Bytes per page : 500
+		No of buffer   : 10000
+
+		Block Nested Loop : 461.334s
+		Index Nested Loop :
+	}
+
+	Schedule and Aircraft(via aid) {
+		Bytes per page : 500
+		No of buffer   : 10000
+
+		Block Nested Loop : 322.966s
+		Index Nested Loop :
+	}
+}
+
+Experiment 2 {
+	
+}

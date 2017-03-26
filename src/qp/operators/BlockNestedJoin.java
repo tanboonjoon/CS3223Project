@@ -121,6 +121,7 @@ public class BlockNestedJoin extends Join {
 					for (int j = 0; j < outerBatch.size(); j++) {
 						// stored the tuple in a hashmap using the searchKey as
 						// a key value'
+						//System.out.println("tuples no : " + ++testLeftCounter);
 						Tuple outerTuple = outerBatch.elementAt(j);
 						searchKey = outerTuple.dataAt(leftIndex);
 						outerTableHashMap.put(searchKey, outerTuple);
