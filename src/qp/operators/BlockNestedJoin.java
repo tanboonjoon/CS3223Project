@@ -31,13 +31,11 @@ public class BlockNestedJoin extends Join {
 	ObjectInputStream in; /// file pointer to the right materialized file
 
 	int rightCursor; // pointer for right side buffer
-	HashMap<Object, Tuple> outerTableHashMap;
+	HashMap<Object, Tuple> outerTableHashMap; // hashmap to store the outer table
 	boolean eosr; // end of stream(right table)
 	boolean eosl; // end of stream(left table)
 	boolean eobj; // end of the block nesteed join
-
-	int testLeftCounter;
-	int testRightCounter;
+	
 
 	public BlockNestedJoin(Join jn) {
 		super(jn.getLeft(), jn.getRight(), jn.getCondition(), jn.getOpType());
@@ -47,22 +45,20 @@ public class BlockNestedJoin extends Join {
 	}
 
 	public boolean open() {
-		// hashmap to store the outer relation
+		/** hashmap that will be used to store the outer relation tuples**/
 		outerTableHashMap = new HashMap<Object, Tuple>();
-		// number of tuple per block/batch/page
+		/** select number of tuples per batch **/
 		int tupleSize = schema.getTupleSize();
 		batchSize = Batch.getPageSize() / tupleSize;
-		// get the comparison key of the tables
+		/** get the comparison Key from both table**/
 		Attribute leftattr = con.getLhs();
 		Attribute rightattr = (Attribute) con.getRhs();
 		leftIndex = left.getSchema().indexOf(leftattr);
 		rightIndex = right.getSchema().indexOf(rightattr);
 
-		// initialize the cursor of input buffer and status of cursor
+		/** initialize the cursors of input buffers **/
 		Batch rightpage;
 		rightCursor = 0;
-		testLeftCounter = 0;
-		testRightCounter = 0;
 		
 		eobj = false;
 		eosl = false;
@@ -109,9 +105,15 @@ public class BlockNestedJoin extends Join {
 
 		outputBatch = new Batch(batchSize);
 		while (!outputBatch.isFull() && eobj == false) {
+			/**
+			 * if inner relation has reach end of file but left relation still have data to read
+			 * read a new set of batches of tuple from outer relation
+			 **/
 			if (eosr == true && eosl == false) {
-				// Read N-1 buffer worth of pages of left relation and store in
-				// hashmap
+				/**
+				 * Read N-1 buffer worth of batches from left relation
+				 * and store them in a hashmap
+				 */
 				for (int i = 0; i < (numBuff - 1); i++) {
 					Batch outerBatch = left.next();
 					if (outerBatch == null) {
@@ -119,8 +121,9 @@ public class BlockNestedJoin extends Join {
 						break;
 					}
 					for (int j = 0; j < outerBatch.size(); j++) {
-						// stored the tuple in a hashmap using the searchKey as
-						// a key value'
+						/** 
+						 * store the tuple in the hashmap using the searchKey as a key vlue
+						 * **/
 						//System.out.println("tuples no : " + ++testLeftCounter);
 						Tuple outerTuple = outerBatch.elementAt(j);
 						searchKey = outerTuple.dataAt(leftIndex);
@@ -138,12 +141,12 @@ public class BlockNestedJoin extends Join {
 			while (eosr == false) {
 				try {
 					if (rightCursor == 0) {
-						testRightCounter++;
 						rightBatch = (Batch) in.readObject();
 					}
 					for (r = rightCursor; r < rightBatch.size(); r++) {
 						Tuple rightTuple = rightBatch.elementAt(r);
 						Object rightSearchKey = rightTuple.dataAt(rightIndex);
+						//using the searchKey of the inner tuple, check if the outertable has the same searchKey
 						if (outerTableHashMap.containsKey(rightSearchKey)) {
 							Tuple leftTuple = outerTableHashMap.get(rightSearchKey);
 							Tuple outputTuple = leftTuple.joinWith(rightTuple);
@@ -151,10 +154,10 @@ public class BlockNestedJoin extends Join {
 							System.out.println();
 							outputBatch.add(outputTuple);
 							if (outputBatch.isFull()) {
-								if (r != rightBatch.size() - 1) {
+								if (r != rightBatch.size() - 1) { // case 1: outputBatch is full but inner batch is not read finish completely
 									rightCursor = r + 1;
 								} else {
-									rightCursor = 0;
+									rightCursor = 0; // other case; the current inner batch has been read finished
 								}
 								return outputBatch;
 							}
@@ -167,9 +170,12 @@ public class BlockNestedJoin extends Join {
 					} catch (IOException io) {
 						System.out.println("NestedJoin:Error in temporary file reading");
 					}
+					//if both outer and inner relation has reach end of file, end the block jon
 					if (eosl) {
 						eobj = true;
 					}
+					
+					//end of right stream, clear the hashmap to get a new set of batches of tuples from other relation
 					eosr = true;
 					outerTableHashMap.clear();
 				} catch (ClassNotFoundException c) {
