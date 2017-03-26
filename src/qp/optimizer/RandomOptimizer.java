@@ -404,7 +404,7 @@ public class RandomOptimizer{
 	    int numbuff = BufferManager.getBuffersPerJoin();
 	    switch(joinType){
 	    case JoinType.NESTEDJOIN:
-
+	    System.out.println("simple nested loop");
 		NestedJoin nj = new NestedJoin((Join) node);
 		nj.setLeft(left);
 		nj.setRight(right);
@@ -415,9 +415,12 @@ public class RandomOptimizer{
 	    	replace with hasjoin, if implemented **/
 
 	    case JoinType.BLOCKNESTED:
-
-		NestedJoin bj = new NestedJoin((Join) node);
+	    System.out.println("blocked nested loop");
+		BlockNestedJoin bj = new BlockNestedJoin((Join) node);
                 /* + other code */
+		bj.setLeft(left);
+		bj.setRight(right);
+		bj.setNumBuff(numbuff);
 		return bj;
 
 	    case JoinType.SORTMERGE:

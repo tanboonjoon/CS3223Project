@@ -32,7 +32,14 @@ public class Tuple implements Serializable {
      **/
 
     public boolean checkJoin(Tuple right, int leftindex, int rightindex){
+    
 	Object leftData = dataAt(leftindex);
+	/*
+	System.out.println("object is" +leftData);
+	System.out.println("class is" +leftData.getClass());
+	System.out.println("hash is : " +leftData.hashCode());
+	System.out.println("to string content is : " +leftData.toString());
+	*/
 	Object rightData = right.dataAt(rightindex);
 
 	if(leftData.equals(rightData))

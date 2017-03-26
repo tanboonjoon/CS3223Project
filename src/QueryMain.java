@@ -134,7 +134,7 @@ public class QueryMain{
 	Operator root = RandomOptimizer.makeExecPlan(logicalroot);
 
 /** Print final Plan **/
-	System.out.println("----------------------Execution Plan----------------");
+	System.out.println("----------------------Execution Plan----------------konichhiwa");
 	Debug.PPrint(root);
 	System.out.println();
 
@@ -171,12 +171,13 @@ long starttime = System.currentTimeMillis();
 	}
 
 
-
+	//System.out.println("before print schema");
 
 	/** print the schema of the result **/
 	Schema schema = root.getSchema();
 	numAtts = schema.getNumCols();
 	printSchema(schema);
+	//System.out.println("after printing schema");
 	Batch resultbatch;
 
 
@@ -185,6 +186,7 @@ long starttime = System.currentTimeMillis();
 
 	while((resultbatch=root.next())!=null){
 	    for(int i=0;i<resultbatch.size();i++){
+	    //	System.out.println("print tuple at " + i);
 		printTuple(resultbatch.elementAt(i));
 	    }
 	}
@@ -200,7 +202,9 @@ System.out.println("Execution time = "+ executiontime);
 
     protected static void printTuple(Tuple t){
 	for(int i=0;i<numAtts;i++){
+		
 	    Object data = t.dataAt(i);
+	
 	    if(data instanceof Integer){
 	       out.print(((Integer)data).intValue()+"\t");
 	    }else if(data instanceof Float){
