@@ -36,7 +36,7 @@ public class BlockNestedJoin extends Join {
 	boolean eosl; // end of stream(left table)
 	boolean eobj; // end of the block nesteed join
 	
-
+	int outerTupleTracker; //track the status of outer relation
 	public BlockNestedJoin(Join jn) {
 		super(jn.getLeft(), jn.getRight(), jn.getCondition(), jn.getOpType());
 		schema = jn.getSchema();
@@ -59,7 +59,7 @@ public class BlockNestedJoin extends Join {
 		/** initialize the cursors of input buffers **/
 		Batch rightpage;
 		rightCursor = 0;
-		
+		outerTupleTracker =0;
 		eobj = false;
 		eosl = false;
 		eosr = true; // right stream is to be repetitively scanned
@@ -124,7 +124,7 @@ public class BlockNestedJoin extends Join {
 						/** 
 						 * store the tuple in the hashmap using the searchKey as a key vlue
 						 * **/
-						//System.out.println("tuples no : " + ++testLeftCounter);
+						System.out.println("Loading tuples no : " + ++outerTupleTracker + " into memory");
 						Tuple outerTuple = outerBatch.elementAt(j);
 						searchKey = outerTuple.dataAt(leftIndex);
 						outerTableHashMap.put(searchKey, outerTuple);

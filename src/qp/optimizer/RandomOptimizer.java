@@ -61,7 +61,7 @@ public class RandomOptimizer {
 	 * optizmization of Query Plan
 	 **/
 
-	public Operator getOptimizedPlan2() {
+	public Operator getOptimizedPlan() {
 		/** get an initial plan for the given sql query **/
 		RandomInitialPlan rip = new RandomInitialPlan(sqlquery);
 		numJoin = rip.getNumJoins();
@@ -117,7 +117,7 @@ public class RandomOptimizer {
 				finalPlan = minNeighbor;
 				
 				while(CURRENT_TEMPERATURE > FINAL_TEMPERATURE) {// will break once current temperature < final which mean freezing point
-					System.out.println("---------------while " + STARTING_TEMPERATURE + "Degree--------");
+					System.out.println("---------------while " + CURRENT_TEMPERATURE + " Degree--------");
 					Operator initPlanCopy = (Operator) initPlan.clone();
 					minNeighbor = getNeighbor(initPlanCopy);
 
@@ -177,109 +177,6 @@ public class RandomOptimizer {
 		
 	}
 
-	/**
-	 * implementation of Iterative Improvement Algorithm for Randomized
-	 * optimization of Query Plan
-	 **/
-
-	public Operator getOptimizedPlan() {
-
-		/** get an initial plan for the given sql query **/
-
-		RandomInitialPlan rip = new RandomInitialPlan(sqlquery);
-		numJoin = rip.getNumJoins();
-
-		int MINCOST = Integer.MAX_VALUE;
-		Operator finalPlan = null;
-		
-		/** NUMTER is number of times random restart **/
-
-		int NUMITER;
-		if (numJoin != 0) {
-			NUMITER = 2 * numJoin;
-		} else {
-			NUMITER = 1;
-		}
-
-		/**
-		 * Randomly restart the gradient descent until the maximum specified
-		 * number of random restarts (NUMITER) has satisfied
-		 **/
-
-		for (int j = 0; j < NUMITER; j++) {
-			Operator initPlan = rip.prepareInitialPlan();
-
-			modifySchema(initPlan);
-			System.out.println("-----------initial Plan-------------");
-			Debug.PPrint(initPlan);
-			PlanCost pc = new PlanCost();
-			int initCost = pc.getCost(initPlan);
-			System.out.println(initCost);
-
-			boolean flag = true;
-			int minNeighborCost = initCost; // just initialization purpose;
-			Operator minNeighbor = initPlan; // just initialization purpose;
-			if (numJoin != 0) {
-
-				while (flag) { // flag = false when local minimum is reached
-					System.out.println("---------------while--------");
-					Operator initPlanCopy = (Operator) initPlan.clone();
-					minNeighbor = getNeighbor(initPlanCopy);
-
-					System.out.println("--------------------------neighbor---------------");
-					Debug.PPrint(minNeighbor);
-					pc = new PlanCost();
-					minNeighborCost = pc.getCost(minNeighbor);
-					System.out.println("  " + minNeighborCost);
-
-					/**
-					 * In this loop we consider from the possible neighbors
-					 * (randomly selected) and take the minimum among for next
-					 * step
-					 **/
-
-					for (int i = 1; i < 2 * numJoin; i++) {
-						initPlanCopy = (Operator) initPlan.clone();
-						Operator neighbor = getNeighbor(initPlanCopy);
-						System.out.println("------------------neighbor--------------");
-						Debug.PPrint(neighbor);
-						pc = new PlanCost();
-						int neighborCost = pc.getCost(neighbor);
-						System.out.println(neighborCost);
-
-						if (neighborCost < minNeighborCost) {
-							minNeighbor = neighbor;
-							minNeighborCost = neighborCost;
-						}
-						// System.out.println("-----------------for-------------");
-					}
-					if (minNeighborCost < initCost) {
-						initPlan = minNeighbor;
-						initCost = minNeighborCost;
-					} else {
-						minNeighbor = initPlan;
-						minNeighborCost = initCost;
-
-						flag = false; // local minimum reached
-					}
-				}
-				System.out.println("------------------local minimum--------------");
-				Debug.PPrint(minNeighbor);
-				System.out.println(" " + minNeighborCost);
-
-			}
-			if (minNeighborCost < MINCOST) {
-				MINCOST = minNeighborCost;
-				finalPlan = minNeighbor;
-
-			}
-		}
-		System.out.println("\n\n\n");
-		System.out.println("---------------------------Final Plan----------------");
-		Debug.PPrint(finalPlan);
-		System.out.println("  " + MINCOST);
-		return finalPlan;
-	}
 
 	/**
 	 * Selects a random method choice for join wiht number joinNum e.g., Nested
