@@ -134,7 +134,7 @@ public class QueryMain{
 	Operator root = RandomOptimizer.makeExecPlan(logicalroot);
 
 /** Print final Plan **/
-	System.out.println("----------------------Execution Plan----------------konichhiwa");
+	System.out.println("----------------------Execution Plan----------------");
 	Debug.PPrint(root);
 	System.out.println();
 
