@@ -19,7 +19,7 @@ public class JoinType{
 
    public static int numJoinTypes(){
 	
-	return HASHJOIN;
+	return 3;
 
         // return k for k joins
     }

@@ -31,7 +31,8 @@ public class BlockNestedJoin extends Join {
 	ObjectInputStream in; /// file pointer to the right materialized file
 
 	int rightCursor; // pointer for right side buffer
-	HashMap<Object, Tuple> outerTableHashMap; // hashmap to store the outer table
+	int leftCursor; // pointer for the left side buffer
+	HashMap<Object, ArrayList<Tuple>> outerTableHashMap; // hashmap to store the outer table
 	boolean eosr; // end of stream(right table)
 	boolean eosl; // end of stream(left table)
 	boolean eobj; // end of the block nesteed join
@@ -46,7 +47,7 @@ public class BlockNestedJoin extends Join {
 
 	public boolean open() {
 		/** hashmap that will be used to store the outer relation tuples**/
-		outerTableHashMap = new HashMap<Object, Tuple>();
+		outerTableHashMap = new HashMap<Object, ArrayList<Tuple>>();
 		/** select number of tuples per batch **/
 		int tupleSize = schema.getTupleSize();
 		batchSize = Batch.getPageSize() / tupleSize;
@@ -59,6 +60,7 @@ public class BlockNestedJoin extends Join {
 		/** initialize the cursors of input buffers **/
 		Batch rightpage;
 		rightCursor = 0;
+		leftCursor = 0;
 		outerTupleTracker =0;
 		eobj = false;
 		eosl = false;
@@ -97,7 +99,7 @@ public class BlockNestedJoin extends Join {
 	}
 
 	public Batch next() {
-		int r;
+		int r, o;
 		if (eobj) {
 			close();
 			return null;
@@ -111,10 +113,11 @@ public class BlockNestedJoin extends Join {
 			 **/
 			if (eosr == true && eosl == false) {
 				/**
-				 * Read N-1 buffer worth of batches from left relation
+				 * Read N-2 buffer worth of batches from left relation
 				 * and store them in a hashmap
+				 * 1 buffer will be used for input and 1 for output
 				 */
-				for (int i = 0; i < (numBuff - 1); i++) {
+				for (int i = 0; i < (numBuff - 2); i++) {
 					Batch outerBatch = left.next();
 					if (outerBatch == null) {
 						eosl = true;
@@ -127,14 +130,25 @@ public class BlockNestedJoin extends Join {
 						System.out.println("Loading tuples no : " + ++outerTupleTracker + " into memory");
 						Tuple outerTuple = outerBatch.elementAt(j);
 						searchKey = outerTuple.dataAt(leftIndex);
-						outerTableHashMap.put(searchKey, outerTuple);
+						/**
+						 * 
+						 * if the searchKey is a foreign key in the outer relation,
+						 * a list will be needed as there will be multiple tuples with the same FK
+						 */
+						if (outerTableHashMap.containsKey(searchKey)) {
+							outerTableHashMap.get(searchKey).add(outerTuple);
+						} else {
+							ArrayList<Tuple> outerTupleList = new ArrayList<Tuple>();
+							outerTupleList.add(outerTuple);
+							outerTableHashMap.put(searchKey, outerTupleList);
+						}
 					}
 				}
 				try {
 					in = new ObjectInputStream(new FileInputStream(rfname));
 					eosr = false;
 				} catch (IOException io) {
-					System.err.println("NestedJoin:error in reading the file");
+					System.err.println("BlockedJoin:error in reading the file");
 					System.exit(1);
 				}
 			}
@@ -148,19 +162,37 @@ public class BlockNestedJoin extends Join {
 						Object rightSearchKey = rightTuple.dataAt(rightIndex);
 						//using the searchKey of the inner tuple, check if the outertable has the same searchKey
 						if (outerTableHashMap.containsKey(rightSearchKey)) {
-							Tuple leftTuple = outerTableHashMap.get(rightSearchKey);
-							Tuple outputTuple = leftTuple.joinWith(rightTuple);
-							Debug.PPrint(outputTuple);
-							System.out.println();
-							outputBatch.add(outputTuple);
-							if (outputBatch.isFull()) {
-								if (r != rightBatch.size() - 1) { // case 1: outputBatch is full but inner batch is not read finish completely
-									rightCursor = r + 1;
-								} else {
-									rightCursor = 0; // other case; the current inner batch has been read finished
+							ArrayList<Tuple> leftTupleList = outerTableHashMap.get(rightSearchKey);
+							for (o = leftCursor; o < leftTupleList.size(); o++) {
+								Tuple leftTuple = leftTupleList.get(o);
+								Tuple outputTuple = leftTuple.joinWith(rightTuple);
+								Debug.PPrint(outputTuple);
+								System.out.println();
+								outputBatch.add(outputTuple);
+								if (outputBatch.isFull()) {
+									/**
+									 * Case 1 : outer relation is not probed finished
+									 * Case 2 : both outer and innerList has been probed finished
+									 * Case 3 : innerlist has not been probed finish
+									 * 
+									 */
+									if (r != rightBatch.size() - 1 && o == leftTupleList.size() -1) {
+										rightCursor = r + 1;
+										leftCursor = 0;
+									}else if (r == rightBatch.size() - 1 && o == leftTupleList.size() -1) {
+										rightCursor = 0;
+										leftCursor = 0;
+									}else if (r == rightBatch.size() - 1 && o != leftTupleList.size() -1){
+										rightCursor = r;
+										leftCursor = o + 1;
+									}else {
+										rightCursor = r;
+										leftCursor = o + 1;
+									}
+									return outputBatch;
 								}
-								return outputBatch;
 							}
+							leftCursor = 0;
 						}
 					}
 					rightCursor = 0;
@@ -168,7 +200,7 @@ public class BlockNestedJoin extends Join {
 					try {
 						in.close();
 					} catch (IOException io) {
-						System.out.println("NestedJoin:Error in temporary file reading");
+						System.out.println("BlockedJoin:Error in temporary file reading");
 					}
 					//if both outer and inner relation has reach end of file, end the block jon
 					if (eosl) {
@@ -179,10 +211,10 @@ public class BlockNestedJoin extends Join {
 					eosr = true;
 					outerTableHashMap.clear();
 				} catch (ClassNotFoundException c) {
-					System.out.println("NestedJoin:Some error in deserialization ");
+					System.out.println("BlockedJoin:Some error in deserialization ");
 					System.exit(1);
 				} catch (IOException io) {
-					System.out.println("NestedJoin:temporary file reading error");
+					System.out.println("BlockedJoin:temporary file reading error");
 					System.exit(1);
 				}
 			}

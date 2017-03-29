@@ -13,24 +13,24 @@ Experiment 1 : {
 		Bytes per page : 500
 		No of buffer   : 10000
 
-		Block Nested Loop : 78.973s
-		Index Nested Loop :
+		Block Nested Loop : 321.219s
+		Hash join : 80.27
 	}
 
 	Flights and Schedule(via flno) {
 		Bytes per page : 500
 		No of buffer   : 10000
 
-		Block Nested Loop : 461.334s
-		Index Nested Loop :
+		Block Nested Loop : 357.248s
+		Hash Join : 108.441s
 	}
 
 	Schedule and Aircraft(via aid) {
 		Bytes per page : 500
 		No of buffer   : 10000
 
-		Block Nested Loop : 322.966s
-		Index Nested Loop :
+		Block Nested Loop : 403.491s
+		Hash join : 124.045s
 	}
 }
 
