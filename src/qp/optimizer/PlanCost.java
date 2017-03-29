@@ -148,9 +148,6 @@ public class PlanCost{
 	case JoinType.BLOCKNESTED:
 	    joincost = 0;
 	    break;
-	case JoinType.SORTMERGE:
-	    joincost = 0;
-	    break;
 	case JoinType.HASHJOIN:
 	    joincost = 0;
 	    break;

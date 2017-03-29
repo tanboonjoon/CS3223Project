@@ -186,7 +186,6 @@ long starttime = System.currentTimeMillis();
 
 	while((resultbatch=root.next())!=null){
 	    for(int i=0;i<resultbatch.size();i++){
-	    //	System.out.println("print tuple at " + i);
 		printTuple(resultbatch.elementAt(i));
 	    }
 	}
@@ -202,7 +201,6 @@ System.out.println("Execution time = "+ executiontime);
 
     protected static void printTuple(Tuple t){
 	for(int i=0;i<numAtts;i++){
-		
 	    Object data = t.dataAt(i);
 	
 	    if(data instanceof Integer){
