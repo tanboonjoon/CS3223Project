@@ -83,7 +83,7 @@ public class BlockNestedJoin extends Join {
 				}
 				out.close();
 			} catch (IOException io) {
-				System.out.println("NestedJoin:writing the temporay file error");
+				System.out.println("BlockNestedJoin:writing the temporay file error");
 				return false;
 			}
 			// }
